@@ -1,0 +1,25 @@
+{# Renders one source's own detail list, injected inline into its /lookup
+   status row as soon as that source's result is known. Expects: kind, items #}
+<ul class="detail-list category-detail">
+    {% if kind == 'jobs' %}
+        {% for item in items %}
+        <li><strong>{{ item.title }}</strong> - {{ item.department }}</li>
+        {% endfor %}
+    {% elif kind == 'programs' %}
+        {% for item in items %}
+        <li><strong>{{ item.program }}</strong> - {{ item.status }}</li>
+        {% endfor %}
+    {% elif kind == 'courses' %}
+        {% for item in items %}
+        <li><strong>{{ item.course }}</strong> - {{ item.title }}</li>
+        {% endfor %}
+    {% elif kind == 'staff_assignments' %}
+        {% for item in items %}
+        <li><strong>{{ item.course }}</strong>{% if item.component %} ({{ item.component }}){% endif %} - {{ item.role }}</li>
+        {% endfor %}
+    {% elif kind == 'groups' %}
+        {% for item in items %}
+        <li>{{ item.name }}</li>
+        {% endfor %}
+    {% endif %}
+</ul>

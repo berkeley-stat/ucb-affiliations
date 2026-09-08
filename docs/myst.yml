@@ -1,0 +1,17 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  title: UCB Affiliation
+  description: >-
+    Tools for looking up UC Berkeley user affiliations across multiple
+    systems (CLI and web)
+  toc:
+    - file: index.md
+    - file: cli.md
+    - file: webapp.md
+    - file: architecture.md
+site:
+  template: book-theme
+  # options:
+  #   favicon: favicon.ico
+  #   logo: site_logo.png

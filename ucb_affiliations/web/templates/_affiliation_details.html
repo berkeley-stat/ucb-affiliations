@@ -1,0 +1,69 @@
+{# Error list and per-category detail lists (jobs, programs, courses,
+   instruction assignments, groups). Shared by affiliations.html's full-page
+   render and lookup.html's live-search view, which appends this below its
+   per-source status rows once the flow finishes. Expects: affiliations #}
+{% if affiliations.errors %}
+<div class="error-section">
+    <h3>Lookup Errors</h3>
+    <ul>
+        {% for step, error in affiliations.errors.items() %}
+        <li><strong>{{ step }}:</strong> {{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if affiliations.details.jobs %}
+<div class="details-section">
+    <h2>Employment Details</h2>
+    <ul class="detail-list">
+        {% for job in affiliations.details.jobs %}
+        <li><strong>{{ job.title }}</strong> - {{ job.department }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if affiliations.details.programs %}
+<div class="details-section">
+    <h2>Academic Programs</h2>
+    <ul class="detail-list">
+        {% for program in affiliations.details.programs %}
+        <li><strong>{{ program.program }}</strong> - {{ program.status }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if affiliations.details.courses %}
+<div class="details-section">
+    <h2>Current Courses</h2>
+    <ul class="detail-list">
+        {% for course in affiliations.details.courses %}
+        <li><strong>{{ course.course }}</strong> - {{ course.title }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if affiliations.details.staff_assignments %}
+<div class="details-section">
+    <h2>Instruction Assignments</h2>
+    <ul class="detail-list">
+        {% for assignment in affiliations.details.staff_assignments %}
+        <li><strong>{{ assignment.course }}</strong>{% if assignment.component %} ({{ assignment.component }}){% endif %} - {{ assignment.role }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if affiliations.details.groups %}
+<div class="details-section">
+    <h2>Group Memberships</h2>
+    <ul class="detail-list">
+        {% for group in affiliations.details.groups %}
+        <li>{{ group.name }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

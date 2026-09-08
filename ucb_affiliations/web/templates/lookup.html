@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dept_name }} - Lookup{% endblock %}
+
+{% block styles %}
+.lookup-form {
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+.lookup-form input[type="text"] {
+    padding: 8px;
+    font-size: 1em;
+    width: 250px;
+}
+.lookup-form button {
+    padding: 8px 20px;
+    font-size: 1em;
+    background-color: #003262;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.lookup-form button:hover {
+    background-color: #00509e;
+}
+.dev-banner {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+}
+.status-panel {
+    margin: 20px 0;
+}
+.status-row {
+    padding: 8px 10px;
+    border-left: 4px solid #ccc;
+    background-color: #f9f9f9;
+    margin: 4px 0;
+}
+/* "succeeded" here only means the source answered - it is deliberately NOT
+   green/red, so it can never be confused with the found/not-found badge
+   that appears in the same row once that source's result is in. */
+.status-row.state-succeeded { border-left-color: #90a4ae; }
+.status-row.state-failed { border-left-color: #f44336; }
+.status-row.state-skipped { border-left-color: #ff9800; }
+.status-row-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.status-row .status-icon {
+    width: 1.2em;
+    text-align: center;
+    flex-shrink: 0;
+    color: #607d8b;
+}
+.status-row.state-failed .status-icon { color: #f44336; }
+.status-row.state-skipped .status-icon { color: #ff9800; }
+.status-row.state-running .status-icon {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    border: 2px solid #ccc;
+    border-top-color: #003262;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+.status-row .result-badge {
+    margin-left: auto;
+}
+.status-row-detail {
+    margin-top: 6px;
+}
+.status-row-detail:empty {
+    margin-top: 0;
+}
+.status-row-detail .detail-list {
+    margin: 0;
+}
+.status-row-detail .category-error {
+    margin: 0;
+    color: #d62728;
+    font-size: 0.9em;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+{% endblock %}
+
+{% block content %}
+<h1>{{ dept_name }} - Lookup</h1>
+
+{% if dev_mode %}
+<div class="dev-banner">
+    Running without OIDC authentication (no CLIENT_ID/CLIENT_SECRET configured) &mdash; local dev mode only.
+</div>
+{% endif %}
+
+<form class="lookup-form" id="lookup-form" method="post" action="{{ url_for('lookup') }}">
+    <label for="user_identifier">CalNet UID or shortname:</label><br><br>
+    <input type="text" id="user_identifier" name="user_identifier" value="{{ user_id or '' }}" autofocus>
+    <button type="submit">Look up</button>
+</form>
+
+<div id="status-panel" class="status-panel" hidden>
+    {% for step, label in [
+        ('jobs_lookup', 'Employee'),
+        ('sis_plans', 'Student'),
+        ('sis_courses', 'Enrolled in Department Courses'),
+        ('grouper_lookup', 'Group Member'),
+        ('dept_ldap_lookup', 'LDAP User'),
+        ('staff_assignments_lookup', 'Teaching Staff'),
+    ] %}
+    <div class="status-row" data-step="{{ step }}">
+        <div class="status-row-header">
+            <span class="status-icon"></span> {{ label }} <span class="result-badge"></span>
+        </div>
+        <div class="status-row-detail"></div>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="lookup-error">
+{% if error %}
+<div class="error-section"><p>{{ error }}</p></div>
+{% endif %}
+</div>
+
+<div id="lookup-results">
+{% if affiliations %}
+{% include "_affiliation_result.html" %}
+{% endif %}
+</div>
+
+{% if not dev_mode %}
+<div class="nav-links">
+    <a href="{{ url_for('affiliations') }}">My Affiliations</a>
+    <a href="{{ url_for('oidc_logout') }}">Logout</a>
+</div>
+{% endif %}
+
+<script>
+(function () {
+    if (typeof EventSource === 'undefined') {
+        return; // no JS live-update support: plain POST form still works
+    }
+
+    var form = document.getElementById('lookup-form');
+    var input = document.getElementById('user_identifier');
+    var statusPanel = document.getElementById('status-panel');
+    var statusRows = statusPanel.querySelectorAll('.status-row');
+    var errorBox = document.getElementById('lookup-error');
+    var resultsBox = document.getElementById('lookup-results');
+    var currentSource = null;
+
+    // "succeeded" means the source answered - it says nothing about whether
+    // the user was found there. That's reported separately via badgeFor(),
+    // per source, as soon as that source's own result is in.
+    var ICONS = {
+        pending: '◶',
+        running: '',
+        succeeded: '✓',
+        failed: '✗',
+        skipped: '▷'
+    };
+
+    function badgeFor(value) {
+        var cls = value === true ? 'yes' : (value === false ? 'no' : 'unknown');
+        var text = value === true ? 'YES' : (value === false ? 'NO' : 'UNKNOWN');
+        return '<span class="status-badge ' + cls + '">' + text + '</span>';
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[<>&]/g, function (c) {
+            return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+        });
+    }
+
+    function rowFor(step) {
+        for (var i = 0; i < statusRows.length; i++) {
+            if (statusRows[i].getAttribute('data-step') === step) return statusRows[i];
+        }
+        return null;
+    }
+
+    function resetStatusPanel() {
+        for (var i = 0; i < statusRows.length; i++) {
+            var row = statusRows[i];
+            row.className = 'status-row';
+            row.querySelector('.status-icon').textContent = ICONS.pending;
+            row.querySelector('.result-badge').innerHTML = '';
+            row.querySelector('.status-row-detail').innerHTML = '';
+        }
+        statusPanel.hidden = false;
+    }
+
+    function showError(message) {
+        errorBox.innerHTML = '<div class="error-section"><p>' + escapeHtml(message) + '</p></div>';
+    }
+
+    form.addEventListener('submit', function (evt) {
+        var userId = input.value.trim();
+        if (!userId) {
+            return; // let the normal POST happen and show the "enter a value" error
+        }
+        evt.preventDefault();
+
+        if (currentSource) {
+            currentSource.close();
+        }
+
+        errorBox.innerHTML = '';
+        resultsBox.innerHTML = '';
+        resetStatusPanel();
+
+        var url = '{{ url_for("lookup_stream") }}?user=' + encodeURIComponent(userId);
+        var source = new EventSource(url);
+        currentSource = source;
+
+        source.onmessage = function (evt) {
+            var data;
+            try {
+                data = JSON.parse(evt.data);
+            } catch (e) {
+                return; // ignore malformed event
+            }
+
+            if (data.type === 'status') {
+                // Query still running for this source - no result yet.
+                var row = rowFor(data.step);
+                if (row) {
+                    row.className = 'status-row state-' + data.state;
+                    row.querySelector('.status-icon').textContent = ICONS[data.state] || '';
+                }
+            } else if (data.type === 'result') {
+                // This source's own result is in - show it immediately,
+                // right in its own box, independent of every other source.
+                var row = rowFor(data.step);
+                if (row) {
+                    row.className = 'status-row state-' + data.state;
+                    row.querySelector('.status-icon').textContent = ICONS[data.state] || '';
+                    row.querySelector('.result-badge').innerHTML = badgeFor(data.status);
+                    row.querySelector('.status-row-detail').innerHTML = data.detail_html || '';
+                }
+            } else if (data.type === 'lookup_error') {
+                showError(data.error);
+                source.close();
+                currentSource = null;
+            } else if (data.type === 'done') {
+                // Catch-up: fill in any row that never got its own live
+                // "result" event - e.g. an upstream identity-resolution
+                // step failed, aborting the flow before this row's step
+                // ever ran, so it would otherwise be stuck on a spinner
+                // forever. Rows that already have a badge are left alone.
+                for (var step in (data.summary || {})) {
+                    if (!data.summary.hasOwnProperty(step)) continue;
+                    var row = rowFor(step);
+                    if (!row) continue;
+                    var badgeSlot = row.querySelector('.result-badge');
+                    if (badgeSlot.innerHTML !== '') continue; // already resolved live
+
+                    var info = data.summary[step];
+                    row.className = 'status-row state-failed';
+                    row.querySelector('.status-icon').textContent = ICONS.failed;
+                    badgeSlot.innerHTML = badgeFor(info.status);
+                    row.querySelector('.status-row-detail').innerHTML = info.detail_html || '';
+                }
+                if (data.identity_error) {
+                    showError('Could not resolve this user: ' + data.identity_error);
+                }
+                source.close();
+                currentSource = null;
+            }
+        };
+
+        source.onerror = function () {
+            // Connection dropped before a done/lookup_error event arrived.
+            if (currentSource === source) {
+                showError('Lost connection to the server while looking this up. Try again.');
+                source.close();
+                currentSource = null;
+            }
+        };
+    });
+})();
+</script>
+{% endblock %}

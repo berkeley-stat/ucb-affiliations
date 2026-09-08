@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dept_name }} - Affiliation Check{% endblock %}
+
+{% block content %}
+<h1>{{ dept_name }} - Affiliation Check</h1>
+
+{% include "_affiliation_result.html" %}
+
+<div class="nav-links">
+    <a href="{{ url_for('user_info') }}">View Raw User Info</a>
+    <a href="{{ url_for('oidc_logout') }}">Logout</a>
+</div>
+{% endblock %}

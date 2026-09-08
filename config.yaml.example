@@ -1,0 +1,47 @@
+# Department affiliation configuration
+# This tool checks if a user has any affiliation with the department(s) listed below.
+# 
+# Mix-and-Match Affiliations:
+# Affiliations can come from different related departments. For example:
+#   - A user employed by Statistics (PSTAT)
+#   - Enrolled in a Biostatistics academic program (96132PHDG)
+#   - Taking STAT courses
+# would be detected as having affiliations with the Statistics Department.
+#
+# This allows departments to define affiliations broadly to include:
+#   - Related/partner departments (e.g., Statistics and Biostatistics)
+#   - Joint programs
+#   - Cross-listed courses
+
+department:
+  name: "Awesome Studies"
+
+# HR Employment - check if user is employed by any of these departments
+employment:
+  hr_dept_numbers:
+    - "PAWES"
+
+# Student Status - check if user is enrolled in any of these academic programs
+student:
+  academic_plan_codes:
+    # Awesome programs
+    - "00123PHDG"  # Awesome PhD
+    - "00123MAG"   # Awesome MA
+    - "A9876U"     # Awesome BA/Undergrad
+
+# Course Enrollment - check if user is taking courses in these subject areas
+courses:
+  subject_areas:
+    - "AWES"       # Awesome courses
+
+# Group Membership - check if user is member of any group under these folder prefixes
+groups:
+  folder_prefixes:
+    - "edu:berkeley:org:awesome:some-folder:some-subfolder"
+
+# Admins - CalNet UIDs or shortnames allowed to use the /lookup tool to check
+# affiliations for someone other than themselves. (Later this may be replaced
+# by a Grouper group membership check instead of a static list.)
+admins:
+  users:
+    - "CHANGEME"

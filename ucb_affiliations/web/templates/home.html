@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Department Affiliation Check - Login{% endblock %}
+
+{% block styles %}
+.login-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    background-color: #003262;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+.login-btn:hover {
+    background-color: #00509e;
+}
+.content {
+    text-align: center;
+}
+.env-info {
+    margin-top: 30px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h1>Department Affiliation Check</h1>
+    <p>Click the button below to authenticate and check your affiliations</p>
+    <a href="{{ url_for('oidc_login') }}" class="login-btn">Login</a>
+    <div class="env-info">
+        <p>Environment: {{ env }}</p>
+    </div>
+</div>
+{% endblock %}

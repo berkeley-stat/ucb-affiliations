@@ -1,0 +1,110 @@
+sources:
+
+  dept_ldap_source:
+    type: process
+    configuration:
+      command:
+        - ldapsearch-json
+        - -H
+        - ldaps://oz.berkeley.edu
+        - -b
+        - cn=users,dc=stat,dc=berkeley,dc=edu
+        - "(uid={{ input }})"
+      pass_to: template
+
+  jobs_source:
+    type: process
+    configuration:
+      command: ["ucbhr", "--json", "jobs", "-t", "campus-uid", "-i", "{{ input }}"]
+      pass_to: template
+
+  sis_plans:
+    type: process
+    configuration:
+      command: ["sis", "--json", "student", "-t", "campus-id", "-a", "plans", "-i"]
+      pass_to: arg
+
+  sis_courses:
+    type: process
+    configuration:
+      command: ["sis", "--json", "courses", "-T", "campus-uid", "-a", "all", "-i"]
+      pass_to: arg
+
+  grouper_source:
+    type: process
+    configuration:
+      command: ["grouper", "subject", "-s", "{{ input }}", "--json"]
+      pass_to: template
+
+  staff_courses_source:
+    type: staff_courses
+    configuration: {}
+
+flow:
+
+  # COMMON STEPS: Everything below is identical to flow-shortname.yaml
+  # (both flows use flows.uid_lookup.calnet_uid)
+  
+  # Optional: Check dept LDAP (will likely fail for UID input since LDAP uses shortnames)
+  - name: dept_ldap_lookup
+    label: Department LDAP
+    source: dept_ldap_source
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: uid
+        type: jmespath
+        value: "json[0].attributes.uid[0]"
+      - name: exists
+        type: jmespath
+        value: "json[0].attributes.uid[0]"
+    depends_on: [uid_lookup]
+
+  - name: jobs_lookup
+    label: UCBHR jobs
+    source: jobs_source
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: jobs
+        type: jmespath
+        value: "json[?status.hrStatus.code=='A'].position"
+    depends_on: [uid_lookup]
+
+  - name: sis_plans
+    label: SIS academic plans
+    source: sis_plans
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: programs
+        type: jmespath
+        value: "json"
+    depends_on: [uid_lookup]
+
+  - name: sis_courses
+    label: SIS courses
+    source: sis_courses
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: courses
+        type: jmespath
+        value: "json"
+    depends_on: [uid_lookup]
+
+  - name: grouper_lookup
+    label: Grouper groups
+    source: grouper_source
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: groups
+        type: jmespath
+        value: "json"
+    depends_on: [uid_lookup]
+
+  - name: staff_assignments_lookup
+    label: SIS staff assignments
+    source: staff_courses_source
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: assignments
+        type: jmespath
+        value: "assignments"
+    depends_on: [uid_lookup]

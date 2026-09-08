@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ucb-affiliations"
+version = "0.1.0"
+description = "Tools for looking up UC Berkeley user affiliations across multiple systems"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=6.0",
+    "rich>=13.0",
+    "flowtoy @ git+https://github.com/flowtoy/flowtoy.git",
+    "flowtoy-ldap @ git+https://github.com/flowtoy/flowtoy-ldap.git",
+    "sis @ git+https://github.com/ryanlovett/sis-cli",
+    "ucbhr @ git+https://github.com/ryanlovett/ucbhr",
+    "grouper @ git+https://github.com/ryanlovett/grouper-cli@ab5983f",
+    "ldapsearch-json @ git+https://github.com/ryanlovett/ldapsearch-json",
+    "calnet-resolve @ git+https://github.com/ryanlovett/calnet-resolve",
+]
+
+[project.scripts]
+affiliation-lookup = "ucb_affiliations.cli.__main__:main"
+
+[project.optional-dependencies]
+webapp = [
+    "Flask>=3.0.0",
+    "Authlib>=1.3.0",
+    "requests>=2.31.0",
+    "cryptography>=41.0.7",
+    "python-dotenv>=1.0.0",
+    "gunicorn>=21.2.0",
+    "flask-oidc @ git+https://github.com/berkeley-stat/flask-oidc.git",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ucb_affiliations*"]

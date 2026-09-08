@@ -1,0 +1,50 @@
+{# Six affiliation-category summary items. Used by affiliations.html's
+   full-page render. The /lookup live-search view renders these inline into
+   its own per-source status rows instead (see lookup.html), rather than
+   including this partial, so a query-succeeded indicator and a
+   found/not-found result never share the same box. Expects: user_id, affiliations #}
+<div class="affiliation-summary">
+    <h2>User: {{ user_id }}</h2>
+
+    <div class="affiliation-item {% if affiliations.employee == True %}active{% elif affiliations.employee == False %}inactive{% else %}unknown{% endif %}">
+        <strong>Employee:</strong>
+        <span class="status-badge {% if affiliations.employee == True %}yes{% elif affiliations.employee == False %}no{% else %}unknown{% endif %}">
+            {% if affiliations.employee == True %}YES{% elif affiliations.employee == False %}NO{% else %}UNKNOWN{% endif %}
+        </span>
+    </div>
+
+    <div class="affiliation-item {% if affiliations.student == True %}active{% elif affiliations.student == False %}inactive{% else %}unknown{% endif %}">
+        <strong>Student:</strong>
+        <span class="status-badge {% if affiliations.student == True %}yes{% elif affiliations.student == False %}no{% else %}unknown{% endif %}">
+            {% if affiliations.student == True %}YES{% elif affiliations.student == False %}NO{% else %}UNKNOWN{% endif %}
+        </span>
+    </div>
+
+    <div class="affiliation-item {% if affiliations.enrolled_in_courses == True %}active{% elif affiliations.enrolled_in_courses == False %}inactive{% else %}unknown{% endif %}">
+        <strong>Enrolled in Department Courses:</strong>
+        <span class="status-badge {% if affiliations.enrolled_in_courses == True %}yes{% elif affiliations.enrolled_in_courses == False %}no{% else %}unknown{% endif %}">
+            {% if affiliations.enrolled_in_courses == True %}YES{% elif affiliations.enrolled_in_courses == False %}NO{% else %}UNKNOWN{% endif %}
+        </span>
+    </div>
+
+    <div class="affiliation-item {% if affiliations.group_member == True %}active{% elif affiliations.group_member == False %}inactive{% else %}unknown{% endif %}">
+        <strong>Group Member:</strong>
+        <span class="status-badge {% if affiliations.group_member == True %}yes{% elif affiliations.group_member == False %}no{% else %}unknown{% endif %}">
+            {% if affiliations.group_member == True %}YES{% elif affiliations.group_member == False %}NO{% else %}UNKNOWN{% endif %}
+        </span>
+    </div>
+
+    <div class="affiliation-item {% if affiliations.ldap_user == True %}active{% elif affiliations.ldap_user == False %}inactive{% else %}unknown{% endif %}">
+        <strong>LDAP User:</strong>
+        <span class="status-badge {% if affiliations.ldap_user == True %}yes{% elif affiliations.ldap_user == False %}no{% else %}unknown{% endif %}">
+            {% if affiliations.ldap_user == True %}YES{% elif affiliations.ldap_user == False %}NO{% else %}UNKNOWN{% endif %}
+        </span>
+    </div>
+
+    <div class="affiliation-item {% if affiliations.teaching_staff == True %}active{% elif affiliations.teaching_staff == False %}inactive{% else %}unknown{% endif %}">
+        <strong>Teaching Staff:</strong>
+        <span class="status-badge {% if affiliations.teaching_staff == True %}yes{% elif affiliations.teaching_staff == False %}no{% else %}unknown{% endif %}">
+            {% if affiliations.teaching_staff == True %}YES{% elif affiliations.teaching_staff == False %}NO{% else %}UNKNOWN{% endif %}
+        </span>
+    </div>
+</div>

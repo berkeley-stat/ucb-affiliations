@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Department Affiliation Check{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #003262;
+        }
+        h2 {
+            color: #003262;
+            margin-top: 30px;
+        }
+        a {
+            color: #003262;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .nav-links {
+            margin-top: 30px;
+        }
+        .nav-links a {
+            margin-right: 20px;
+        }
+        .affiliation-summary {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .affiliation-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #ccc;
+            background-color: white;
+        }
+        .affiliation-item.active {
+            border-left-color: #4CAF50;
+        }
+        .affiliation-item.inactive {
+            border-left-color: #f44336;
+        }
+        .affiliation-item.unknown {
+            border-left-color: #ff9800;
+        }
+        .details-section {
+            margin: 20px 0;
+        }
+        .detail-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .detail-list li {
+            background-color: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-badge.yes {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status-badge.no {
+            background-color: #f44336;
+            color: white;
+        }
+        .status-badge.unknown {
+            background-color: #ff9800;
+            color: white;
+        }
+        .error-section {
+            background-color: #ffe6e6;
+            border: 1px solid #d62728;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        {% block styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>

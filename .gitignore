@@ -1,0 +1,18 @@
+# Real environment files (credentials) - never commit these.
+# .env.example is a template with no real secrets and is tracked.
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+*.swp
+
+# config.yaml is deployer-provided (copy config.yaml.example) - not tracked.
+config.yaml
+
+# MyST build outputs
+_build
