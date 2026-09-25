@@ -6,6 +6,27 @@ sources:
       command: ["calnet-resolve", "--json", "{{ input }}"]
       pass_to: template
 
+  # Department LDAP server and base DN come from the environment
+  # (DEPT_LDAP_URI, DEPT_LDAP_BASE_DN) so they aren't published here. They're
+  # read by the dept_ldap_config step: process commands can template from
+  # flows.* but not from env sources directly.
+  dept_ldap_env:
+    type: env
+    configuration:
+      vars: [DEPT_LDAP_URI, DEPT_LDAP_BASE_DN]
+
+  dept_ldap_source:
+    type: process
+    configuration:
+      command:
+        - ldapsearch-json
+        - -H
+        - "{{ flows.dept_ldap_config.uri }}"
+        - -b
+        - "{{ flows.dept_ldap_config.base_dn }}"
+        - "(uid={{ input }})"
+      pass_to: template
+
   jobs_source:
     type: process
     configuration:
@@ -102,3 +123,28 @@ flow:
         type: jmespath
         value: "assignments"
     depends_on: [calnet_lookup]
+
+  - name: dept_ldap_config
+    label: Department LDAP settings
+    source: dept_ldap_env
+    output:
+      - name: uri
+        type: jmespath
+        value: "DEPT_LDAP_URI"
+      - name: base_dn
+        type: jmespath
+        value: "DEPT_LDAP_BASE_DN"
+
+  # Dept LDAP entries are keyed by CalNet shortname. Used to detect an existing account.
+  - name: dept_ldap_lookup
+    label: Department LDAP
+    source: dept_ldap_source
+    input: "{{ flows.shortname_lookup.calnet_shortname }}"
+    output:
+      - name: uid
+        type: jmespath
+        value: "json[0].attributes.uid[0]"
+      - name: exists
+        type: jmespath
+        value: "json[0].attributes.uid[0]"
+    depends_on: [shortname_lookup, dept_ldap_config]

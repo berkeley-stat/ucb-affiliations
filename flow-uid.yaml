@@ -1,14 +1,29 @@
 sources:
 
+  calnet_lookup_source:
+    type: process
+    configuration:
+      command: ["calnet-resolve", "--json", "{{ input }}"]
+      pass_to: template
+
+  # Department LDAP server and base DN come from the environment
+  # (DEPT_LDAP_URI, DEPT_LDAP_BASE_DN) so they aren't published here. They're
+  # read by the dept_ldap_config step: process commands can template from
+  # flows.* but not from env sources directly.
+  dept_ldap_env:
+    type: env
+    configuration:
+      vars: [DEPT_LDAP_URI, DEPT_LDAP_BASE_DN]
+
   dept_ldap_source:
     type: process
     configuration:
       command:
         - ldapsearch-json
         - -H
-        - ldaps://oz.berkeley.edu
+        - "{{ flows.dept_ldap_config.uri }}"
         - -b
-        - cn=users,dc=stat,dc=berkeley,dc=edu
+        - "{{ flows.dept_ldap_config.base_dn }}"
         - "(uid={{ input }})"
       pass_to: template
 
@@ -45,11 +60,33 @@ flow:
   # COMMON STEPS: Everything below is identical to flow-shortname.yaml
   # (both flows use flows.uid_lookup.calnet_uid)
   
-  # Optional: Check dept LDAP (will likely fail for UID input since LDAP uses shortnames)
+  # Dept LDAP entries are keyed by CalNet shortname (uid=<shortname>), so
+  # resolve the UID to a shortname first. Used to detect an existing account.
+  - name: shortname_resolve
+    label: CalNet LDAP (UID → shortname)
+    source: calnet_lookup_source
+    input: "{{ flows.uid_lookup.calnet_uid }}"
+    output:
+      - name: calnet_shortname
+        type: jmespath
+        value: "json.uid"
+    depends_on: [uid_lookup]
+
+  - name: dept_ldap_config
+    label: Department LDAP settings
+    source: dept_ldap_env
+    output:
+      - name: uri
+        type: jmespath
+        value: "DEPT_LDAP_URI"
+      - name: base_dn
+        type: jmespath
+        value: "DEPT_LDAP_BASE_DN"
+
   - name: dept_ldap_lookup
     label: Department LDAP
     source: dept_ldap_source
-    input: "{{ flows.uid_lookup.calnet_uid }}"
+    input: "{{ flows.shortname_resolve.calnet_shortname }}"
     output:
       - name: uid
         type: jmespath
@@ -57,7 +94,7 @@ flow:
       - name: exists
         type: jmespath
         value: "json[0].attributes.uid[0]"
-    depends_on: [uid_lookup]
+    depends_on: [shortname_resolve, dept_ldap_config]
 
   - name: jobs_lookup
     label: UCBHR jobs
