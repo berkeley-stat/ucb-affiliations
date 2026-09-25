@@ -15,7 +15,7 @@ dependencies = [
     "flowtoy-ldap @ git+https://github.com/flowtoy/flowtoy-ldap.git",
     "sis @ git+https://github.com/ryanlovett/sis-cli",
     "ucbhr @ git+https://github.com/ryanlovett/ucbhr",
-    "grouper @ git+https://github.com/ryanlovett/grouper-cli@ab5983f",
+    "grouper @ git+https://github.com/ryanlovett/grouper-cli@4b4755d",
     "ldapsearch-json @ git+https://github.com/ryanlovett/ldapsearch-json",
     "calnet-resolve @ git+https://github.com/ryanlovett/calnet-resolve",
 ]
